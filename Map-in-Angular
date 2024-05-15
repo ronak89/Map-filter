@@ -1,0 +1,112 @@
+import { Component, Inject, Injectable, OnInit } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { ExampleClass, Historian } from '../models/example-class.model';
+import { GetEmployeeService } from '../services/get-employee.service';
+
+@Component({
+  selector: 'app-root',
+
+  standalone: true,
+  imports: [RouterOutlet],
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.css',
+})
+export class AppComponent implements OnInit {
+  title = 'array-with-loop-and-object';
+  exampleInstance!: ExampleClass[];
+  myNames!: myName[];
+  nameOnly!: nameOnly[];
+  historian: Historian[] = [];
+  constructor(public ms: GetEmployeeService) {}
+
+  ngOnInit(): void {
+    this.nameOnly = [];
+    this.myNames = [];
+    this.exampleInstance = this.ms.getExampleList();
+    if (this.exampleInstance) {
+      this.exampleInstance.filter((p: ExampleClass) =>
+        this.myNames.push(<myName>{ name: p.name })
+      );
+      this.historian = this.exampleInstance.flatMap((s: ExampleClass) =>
+        s.historian.map(
+          (p: Historian) =>
+            <Historian>{ displayName: p.displayName, label: p.label }
+        )
+      );
+      console.log(this.historian);
+      // Convert to key-value object
+      let historianMap: { [key: string]: Historian } = this.exampleInstance
+        .flatMap((s: ExampleClass) => s.historian)
+        .reduce((acc, p: Historian) => {
+          acc[p.displayName] = p;
+          return acc;
+        }, {} as { [key: string]: Historian });
+
+      console.log(historianMap);
+    }
+  }
+}
+
+class myName {
+  id!: number;
+  name!: string;
+  nameOnly!: nameOnly;
+}
+class nameOnly {
+  name!: string;
+}
+------------------
+export class ExampleClass {
+  id!: number;
+  name!: string;
+  isActive!: boolean;
+  createdDate!: Date;
+  email!: string;
+  phoneNumber!: string;
+  balance!: number;
+  status!: string;
+  category!: string;
+  description!: string;
+  historian: Historian[] = [];
+}
+
+export class Historian {
+  displayName!: string;
+  label!: string;
+}
+----------------
+import { Injectable } from '@angular/core';
+import { ExampleClass } from '../models/example-class.model';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class GetEmployeeService {
+  constructor(private emp: ExampleClass) {}
+
+  getExampleList(): ExampleClass[] {
+    let exampleList: ExampleClass[] = [];
+
+    for (let i = 1; i <= 10; i++) {
+      let exampleInstance = new ExampleClass();
+      exampleInstance.id = i;
+      exampleInstance.name = 'Name ' + i;
+      exampleInstance.isActive = i % 2 === 0; // Just an example for the isActive field
+      exampleInstance.createdDate = new Date();
+      exampleInstance.email = 'email' + i + '@example.com';
+      exampleInstance.phoneNumber = '123-456-789' + i;
+      exampleInstance.balance = i * 100;
+      exampleInstance.status = 'Status ' + i;
+      exampleInstance.category = 'Category ' + i;
+      exampleInstance.description = 'Description ' + i;
+      // Adding Historian records
+      exampleInstance.historian = [
+        { displayName: 'Historian Name ' + i + 'A', label: 'Label ' + i + 'A' },
+        { displayName: 'Historian Name ' + i + 'B', label: 'Label ' + i + 'B' },
+      ];
+      exampleList.push(exampleInstance);
+    }
+
+    return exampleList;
+  }
+}
