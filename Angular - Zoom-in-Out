@@ -1,0 +1,120 @@
+<div
+  style="align-items: center"
+  class="chart-container"
+  (wheel)="onWheel($event)"
+  (click)="openDialog()"
+  [style.width.px]="600"
+  [style.height.px]="400"
+>
+  <canvas
+    id="MyChart"
+    [style.transform]="'scale(' + zoomLevel + ') translate(-50%, -50%)'"
+    [style.transform-origin.px]="[zoomOriginX, zoomOriginY]"
+    style="width: 100%; height: 100%"
+  >
+    {{ chart }}
+  </canvas>
+
+  <button (click)="zoomIn()">Zoom In</button>
+  <button (click)="zoomOut()">Zoom Out</button>
+</div>
+
+<!-- <app-custom-dialog
+  *ngIf="dialogVisible"
+  (close)="closeDialog()"
+></app-custom-dialog> -->
+
+---------------------------
+import { Component, OnInit } from "@angular/core";
+import Chart from "chart.js/auto";
+//or
+// import Chart from 'chart.js'
+
+@Component({
+  selector: "app-bar-chart",
+  templateUrl: "./bar-chart.component.html",
+  styleUrls: ["./bar-chart.component.css"],
+})
+export class BarChartComponent implements OnInit {
+  zoomLevel: number = 1;
+  zoomStep: number = 0.1;
+  maxZoom: number = 3;
+  minZoom: number = 0.5;
+  zoomOriginX: number = 300; // Center x-coordinate of the chart container
+  zoomOriginY: number = 200; // Center y-coordinate of the chart container
+
+  dialogVisible = false;
+
+  openDialog() {
+    this.dialogVisible = true;
+  }
+  closeDialog() {
+    this.dialogVisible = false;
+  }
+  constructor() {}
+
+  ngOnInit(): void {
+    this.createChart();
+  }
+  onWheel(event: WheelEvent) {
+    event.preventDefault();
+    if (event.deltaY < 0) {
+      // Zoom in
+      this.zoomIn();
+    } else {
+      // Zoom out
+      this.zoomOut();
+    }
+  }
+
+  zoomIn() {
+    debugger;
+
+    if (this.zoomLevel < this.maxZoom) {
+      this.zoomLevel += this.zoomStep;
+    }
+  }
+
+  zoomOut() {
+    if (this.zoomLevel > this.minZoom) {
+      this.zoomLevel -= this.zoomStep;
+    }
+  }
+
+  public chart: any;
+
+  createChart() {
+    this.chart = new Chart("MyChart", {
+      type: "bar", //this denotes tha type of chart
+
+      data: {
+        // values on X-Axis
+        labels: [
+          "2022-05-10",
+          "2022-05-11",
+          "2022-05-12",
+          "2022-05-13",
+          "2022-05-14",
+          "2022-05-15",
+          "2022-05-16",
+          "2022-05-17",
+        ],
+        datasets: [
+          {
+            label: "Sales",
+            data: ["467", "576", "572", "79", "92", "574", "573", "576"],
+            backgroundColor: "blue",
+          },
+          {
+            label: "Profit",
+            data: ["542", "542", "536", "327", "17", "0.00", "538", "541"],
+            backgroundColor: "limegreen",
+          },
+        ],
+      },
+      options: {
+        aspectRatio: 2.5,
+      },
+    });
+  }
+}
