@@ -1,0 +1,78 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+
+public class MachineEvent
+{
+    public string Batch { get; set; }
+    public string Reason { get; set; }
+    public string Flag { get; set; }
+    public DateTime DateTime { get; set; }
+}
+
+public class Program
+{
+    public static void Main()
+    {
+        // List of events with their respective details
+        List<MachineEvent> events = new List<MachineEvent>
+        {
+            new MachineEvent { Batch = "bt-1", Reason = "Reason not Found", Flag = "Start", DateTime = DateTime.Parse("2015-05-16T05:50:06", null, DateTimeStyles.RoundtripKind) },
+            new MachineEvent { Batch = "bt-1", Reason = "Machine not work", Flag = "Start", DateTime = DateTime.Parse("2015-05-16T05:51:26", null, DateTimeStyles.RoundtripKind) },
+            new MachineEvent { Batch = "bt-1", Reason = "Machine not work", Flag = "Stop", DateTime = DateTime.Parse("2015-05-16T05:51:27", null, DateTimeStyles.RoundtripKind) },
+            new MachineEvent { Batch = "bt-1", Reason = "Reason not Found", Flag = "Start", DateTime = DateTime.Parse("2015-05-16T05:52:02", null, DateTimeStyles.RoundtripKind) },
+            new MachineEvent { Batch = "bt-1", Reason = "Reason not Found", Flag = "Stop", DateTime = DateTime.Parse("2015-05-16T05:53:06", null, DateTimeStyles.RoundtripKind) },
+            new MachineEvent { Batch = "bt-1", Reason = "Reason not Found", Flag = "Start", DateTime = DateTime.Parse("2015-05-16T05:52:07", null, DateTimeStyles.RoundtripKind) },
+            new MachineEvent { Batch = "bt-1", Reason = "Reason not Found", Flag = "Stop", DateTime = DateTime.Parse("2015-05-16T05:53:08", null, DateTimeStyles.RoundtripKind) },
+            new MachineEvent { Batch = "bt-1", Reason = "Machine not work", Flag = "Stop", DateTime = DateTime.Parse("2015-05-16T05:53:09", null, DateTimeStyles.RoundtripKind) }
+        };
+
+        // Sort events by datetime
+        events = events.OrderBy(e => e.DateTime).ToList();
+
+        // Dictionary to store total stopped time by reason
+        Dictionary<string, TimeSpan> reasonStoppedTimes = new Dictionary<string, TimeSpan>();
+
+        // Stack to keep track of active start events
+        Stack<MachineEvent> startEvents = new Stack<MachineEvent>();
+
+        foreach (var machineEvent in events)
+        {
+            if (machineEvent.Flag == "Start")
+            {
+                // Push the start event onto the stack
+                startEvents.Push(machineEvent);
+            }
+            else if (machineEvent.Flag == "Stop")
+            {
+                // Pop the last start event from the stack
+                if (startEvents.Count > 0)
+                {
+                    var lastStartEvent = startEvents.Pop();
+                    // Ensure the reason matches for consistency
+                    while (startEvents.Count > 0 && lastStartEvent.Reason != machineEvent.Reason)
+                    {
+                        lastStartEvent = startEvents.Pop();
+                    }
+
+                    // Calculate the interval from the last start to this stop
+                    TimeSpan interval = machineEvent.DateTime - lastStartEvent.DateTime;
+
+                    // Add the interval to the corresponding reason's total stopped time
+                    if (!reasonStoppedTimes.ContainsKey(machineEvent.Reason))
+                    {
+                        reasonStoppedTimes[machineEvent.Reason] = TimeSpan.Zero;
+                    }
+                    reasonStoppedTimes[machineEvent.Reason] += interval;
+                }
+            }
+        }
+
+        // Output the total stopped time in seconds for each reason
+        foreach (var reason in reasonStoppedTimes.Keys)
+        {
+            Console.WriteLine($"Total stopped time for '{reason}': {reasonStoppedTimes[reason].TotalSeconds} seconds");
+        }
+    }
+}
