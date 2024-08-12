@@ -1,0 +1,130 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace ConsoleApp1
+{
+    internal class myClass
+    {
+        public string Batch { get; set; }
+        public string Message { get; set; }
+        public DateTime? CreateOn { get; set; }
+        public DateTime? Update { get; set; }
+        public int Active { get; set; }
+    }
+
+    internal class Program
+    {
+        static void Main(string[] args)
+        {
+            // Creating a list of 15 dummy records
+            List<myClass> records = new List<myClass>();
+
+            string[] messages = new string[]
+            {
+                "Machine Start",
+                "Machine Fails",
+                "Pump",
+                "Low Pressure",
+                "Light is gone",
+                "Machine Start",
+                "Low Pressure",
+                "Pump",
+                "Machine Start",
+                "Low Pressure",
+                "Light is gone",
+                "Pump",
+                "Machine Fails",
+                "Low Pressure",
+                "Machine Start"
+            };
+
+            DateTime startTime = DateTime.Now;
+
+            for (int i = 0; i < 15; i++)
+            {
+                records.Add(new myClass
+                {
+                    Batch = $"Batch_{i + 1}",
+                    Message = messages[i % messages.Length],
+                    CreateOn = startTime.AddMinutes(i),
+                    Update = startTime.AddMinutes(i + 1), // Example update time
+                    Active = i % 2  // Alternates between 1 and 0
+                });
+            }
+
+            // Print all records before processing
+            Console.WriteLine("All Records:");
+            foreach (var record in records)
+            {
+                Console.WriteLine($"Batch: {record.Batch}, Message: {record.Message}, CreateOn: {record.CreateOn}, Update: {record.Update}, Active: {record.Active}");
+            }
+            Console.WriteLine();
+
+            // Returning the list of records
+            PrintRecords(records);
+        }
+
+        static void PrintRecords(List<myClass> records)
+        {
+            // Dictionary to track the latest CreateOn date for each message from clearList
+            Dictionary<string, DateTime> latestClearListDates = new Dictionary<string, DateTime>();
+
+            var triggerList = new List<myClass>();
+            var clearList = new List<myClass>();
+
+            // Categorize records into triggerList and clearList
+            foreach (var record in records)
+            {
+                if (record.Active == 0)
+                {
+                    if (!latestClearListDates.ContainsKey(record.Message) || record.CreateOn > latestClearListDates[record.Message])
+                    {
+                        latestClearListDates[record.Message] = record.CreateOn.GetValueOrDefault();
+                    }
+                }
+                else if (record.Active == 1)
+                {
+                    triggerList.Add(record);
+                }
+            }
+
+            // Update CreateOn in triggerList based on latest clearList dates
+            foreach (var record in triggerList)
+            {
+                if (latestClearListDates.ContainsKey(record.Message) && latestClearListDates[record.Message] > record.CreateOn.GetValueOrDefault())
+                {
+                    record.CreateOn = latestClearListDates[record.Message];
+                }
+            }
+
+            // Create a set of messages in the triggerList for quick lookup
+            var triggerMessages = new HashSet<string>(triggerList.Select(r => r.Message));
+
+            // Filter clearList to include only records that are not matched by a later triggerList record
+            foreach (var record in records.Where(r => r.Active == 0))
+            {
+                if (!triggerMessages.Contains(record.Message) || (latestClearListDates.ContainsKey(record.Message) && latestClearListDates[record.Message] > record.CreateOn.GetValueOrDefault()))
+                {
+                    clearList.Add(record);
+                }
+            }
+
+            // Print triggerList
+            Console.WriteLine("Trigger List (Active = 1):");
+            foreach (var record in triggerList)
+            {
+                Console.WriteLine($"Batch: {record.Batch}, Message: {record.Message}, CreateOn: {record.CreateOn}, Update: {record.Update}, Active: {record.Active}");
+            }
+            Console.WriteLine();
+
+            // Print clearList
+            Console.WriteLine("Clear List (Active = 0):");
+            foreach (var record in clearList)
+            {
+                Console.WriteLine($"Batch: {record.Batch}, Message: {record.Message}, CreateOn: {record.CreateOn}, Update: {record.Update}, Active: {record.Active}");
+            }
+            Console.WriteLine();
+        }
+    }
+}
